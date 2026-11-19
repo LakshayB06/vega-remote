@@ -124,8 +124,7 @@ footer{padding:8px 10px calc(10px + env(safe-area-inset-bottom));border-top:1px 
 'use strict';
 // The app lives on GitHub Pages; it only ever talks to Sir's own n8n relay.
 const API = 'https://n8n.srv1811772.hstgr.cloud/webhook/vega-remote';
-// text/plain keeps requests "simple" (no CORS preflight); the relay parses the JSON itself.
-const HDR = { 'Content-Type': 'text/plain;charset=UTF-8' };
+const HDR = { 'Content-Type': 'application/json' };
 const $ = id => document.getElementById(id);
 const LS = { get k() { try { return localStorage.getItem('vega.token') || ''; } catch { return ''; } }, set k(v) { try { v ? localStorage.setItem('vega.token', v) : localStorage.removeItem('vega.token'); } catch { } } };
 let lastId = 0, status = null, statusAt = null, /* ms timestamp, phone clock */ polling = false, timer = null, failures = 0, waiting = 0;
