@@ -82,6 +82,11 @@ footer{padding:8px 10px calc(10px + env(safe-area-inset-bottom));border-top:1px 
 .job button{margin-top:6px;padding:6px 12px;background:rgba(255,77,109,.15);color:#ff9fb1;border:1px solid rgba(255,77,109,.4)}
 .danger{width:100%;margin-top:16px;padding:12px;background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.45);color:#ff9fb1}
 .note{font-size:12px;color:var(--mut);margin-top:12px}
+/* HADES (god mode) */
+body.hades{--ac:#ff2a3d;--ac2:#ff7a1a;--line:rgba(255,50,60,.18);--line2:rgba(255,60,60,.38);--txt:#ffe6e2;--mut:#b0807e;background:radial-gradient(120% 60% at 50% -10%,rgba(255,42,61,.16),transparent 60%),#070203}
+body.hades .mini{filter:hue-rotate(150deg) saturate(2)}
+body.hades .title b{text-shadow:0 0 10px rgba(255,42,61,.8)}
+body.hades .m.vega{background:rgba(255,42,61,.07)}
 </style>
 </head>
 <body>
@@ -135,6 +140,7 @@ async function api(action, data = {}) {
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json(); return Array.isArray(d) ? d[0] : d;
 }
+const persona = () => (status && status.mode === 'hades') ? 'HADES' : 'VEGA';
 const fmt = t => { const d = t ? new Date(t) : new Date(); return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase(); };
 const log = $('log');
 const atBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 80;
@@ -143,6 +149,7 @@ function msg(who, text, at, cls = '') {
   const m = document.createElement('div'); m.className = 'm ' + who + (cls ? ' ' + cls : '');
   const w = document.createElement('div'); w.className = 'who'; w.textContent = who === 'user' ? 'YOU' : 'VEGA';
   const t = document.createElement('span'); t.textContent = fmt(at); w.appendChild(t); m.appendChild(w);
+  if (who !== 'user') w.firstChild.textContent = persona();
   m.appendChild(document.createTextNode(text)); return put(m);
 }
 function line(cls, text) { const d = document.createElement('div'); d.className = cls; d.textContent = text; return put(d); }
@@ -179,6 +186,10 @@ function renderStatus() {
   st.lastChild.textContent = !status ? 'Waiting for your laptop…' : online
     ? (status.controlling ? 'Operating your laptop…' : status.busy ? 'Working…' : status.ready ? 'Laptop online · ' + (status.model || status.provider || '') : 'Online · no AI key on the laptop')
     : 'Laptop offline · last seen ' + (statusAt ? fmt(statusAt) : 'never');
+  const hades = !!(status && status.mode === 'hades');
+  document.body.classList.toggle('hades', hades);
+  document.querySelector('.title b').textContent = persona();
+  document.title = hades ? 'HADES Remote' : 'VEGA Remote';
   const acting = online && status && (status.controlling || status.busy);
   $('mini').classList.toggle('acting', !!(online && status && status.controlling));
   $('stop').classList.toggle('live', !!acting);
