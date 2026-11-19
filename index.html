@@ -82,6 +82,11 @@ footer{padding:8px 10px calc(10px + env(safe-area-inset-bottom));border-top:1px 
 .job button{margin-top:6px;padding:6px 12px;background:rgba(255,77,109,.15);color:#ff9fb1;border:1px solid rgba(255,77,109,.4)}
 .danger{width:100%;margin-top:16px;padding:12px;background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.45);color:#ff9fb1}
 .note{font-size:12px;color:var(--mut);margin-top:12px}
+.shot{align-self:stretch;border:1px solid var(--line2);border-radius:14px;padding:6px;background:rgba(94,234,255,.04)}
+.shot img{display:block;width:100%;border-radius:9px}
+.shot small{display:block;color:var(--mut);font:11px ui-monospace,monospace;margin:5px 4px 0}
+#viewer{position:fixed;inset:0;background:#000;z-index:9;display:flex;align-items:center;justify-content:center;overflow:auto}
+#viewer img{max-width:none;width:200%;touch-action:pan-x pan-y pinch-zoom}
 /* HADES (god mode) */
 body.hades{--ac:#ff2a3d;--ac2:#ff7a1a;--line:rgba(255,50,60,.18);--line2:rgba(255,60,60,.38);--txt:#ffe6e2;--mut:#b0807e;background:radial-gradient(120% 60% at 50% -10%,rgba(255,42,61,.16),transparent 60%),#070203}
 body.hades .mini{filter:hue-rotate(150deg) saturate(2)}
@@ -110,6 +115,8 @@ body.hades .m.vega{background:rgba(255,42,61,.07)}
   <div id="log"></div>
   <footer>
     <div class="chips" id="chips">
+      <button data-q="Show me the screen">Screen</button>
+      <button data-q="Stay awake for 8 hours">Stay awake</button>
       <button data-q="What's on today?">Today</button>
       <button data-q="Give me my morning briefing">Briefing</button>
       <button data-q="Any pending reminders?">Reminders</button>
@@ -177,6 +184,14 @@ function handle(it) {
   else if (it.kind === 'confirm') approval(String(b.id), String(b.text || ''));
   else if (it.kind === 'confirm-done') { const c = confirms.get(String(b.id)); if (c && !c.classList.contains('done')) { c.classList.add('done'); c.querySelector('b').textContent = b.ok ? 'APPROVED' : (b.expired ? 'EXPIRED' : 'DENIED'); } }
   else if (it.kind === 'note') line('sys', String(b.text || ''));
+  else if (it.kind === 'image' && b.data) {
+    const d = document.createElement('div'); d.className = 'shot';
+    const im = new Image(); im.alt = 'Laptop screen'; im.src = 'data:' + (b.mime || 'image/jpeg') + ';base64,' + b.data;
+    im.onclick = () => { const v = document.createElement('div'); v.id = 'viewer'; const big = new Image(); big.src = im.src; v.appendChild(big); v.onclick = () => v.remove(); document.body.appendChild(v); };
+    const cap = document.createElement('small'); cap.textContent = 'Laptop screen \u00b7 ' + fmt(b.at || it.created_at) + ' \u00b7 tap to zoom';
+    d.append(im, cap); put(d);
+    waiting = Math.max(0, waiting - 1); setTyping(waiting > 0);
+  }
 }
 
 function renderStatus() {
@@ -232,6 +247,7 @@ $('menu').onclick = () => {
   const kv = (k, v) => { const r = document.createElement('div'); r.className = 'kv'; const a = document.createElement('span'); a.textContent = k; const b = document.createElement('span'); b.textContent = v; r.append(a, b); c.appendChild(r); };
   const s = status || {};
   kv('Status', $('state').lastChild.textContent);
+  kv('Keep awake', s.awakeUntil && Date.parse(s.awakeUntil) > Date.now() ? 'until ' + fmt(s.awakeUntil) : 'off');
   kv('AI', s.ready ? (s.provider || '') + ' · ' + (s.model || '') : 'not connected');
   if (s.system) kv('Laptop', 'CPU ' + s.system.cpu + '% · RAM ' + s.system.mem + '%' + (s.system.battery != null ? ' · battery ' + s.system.battery + '%' : ''));
   const h2 = document.createElement('h3'); h2.textContent = 'JOBS'; h2.style.marginTop = '16px'; c.appendChild(h2);
